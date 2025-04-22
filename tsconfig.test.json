@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // widen scope so Jest can see both src/ and tests/
+    "rootDir": "."
+  },
+  "include": ["src/**/*", "tests/**/*"]
+}
