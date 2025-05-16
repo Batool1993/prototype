@@ -1,6 +1,10 @@
 import request from "supertest";
 import app from "../src/index";
 import { Database } from "../src/storage/DataBase";
+import { IPlaceRepository } from '../src/domain/repos/IPlaceRepo';
+import { create } from "domain";
+import { Place } from "../src/domain/models/place";
+import { PlaceService } from "../src/domain/services/PlaceService";
 
 const AUTH_TOKEN = process.env.AUTH_TOKEN || "testtoken";
 
@@ -78,3 +82,54 @@ describe("Places API", () => {
     await Database.getPool().end();
   });
 });
+
+describe('tests coordinate storage logic', () => {
+  let mockedRepo: jest.Mocked<IPlaceRepository>;
+  let service : PlaceService;
+
+
+  beforeEach(( ) => {
+    mockedRepo = {
+      create: jest.fn(),
+      findById: jest.fn(),
+      findNearby: jest.fn(),
+      findByIds: jest.fn(),
+
+    }
+
+    service = new PlaceService(mockedRepo) ;
+
+  })
+
+  it("checks if the coordinates get stored correctly" , async() => {
+     
+    const props = {name:'test', descruption :'testing the coordinate logic' ,category:'place' , latitude:3.45 , longitude:4.5 }
+    const place = new Place({id:1, ...props})
+    const radius = 500;
+    let places: (Place & {distance: number })[] = []
+
+    mockedRepo.create.mockResolvedValue(place);
+    const result = await service.createPlace(place);
+    const params = {name: 'test',latitude: props.latitude , longitude: place.longitude , radius};
+    const newPlace = new Place({id:1, ...params})
+    let findByResult : (Place & {distance :number} | undefined []) 
+    places.push({...newPlace , distance: 0 })
+    mockedRepo.findNearby.mockResolvedValue( places);
+    const results = await service.getNearbyPlaces(params);
+    expect(results).toEqual(places);
+  })
+
+
+
+
+
+
+})
+
+
+
+//latitude : 33.4
+//longitude : 44.5
+//latitude : 45.4
+//longitude : 56.7
+//distance : 
